@@ -64,10 +64,10 @@ class CodeConverter:
             return pl.DataFrame({col: arr.to_list()}, strict=False)
         if isinstance(codes, pd.Series):
             stripped = cls._prepare_stripped(codes)
-            return stripped.astype(int)
+            return stripped.astype('float64').astype(int)
         if isinstance(codes, pl.Series):
             stripped = cls._prepare_stripped(codes)
-            return stripped.cast(pl.Int64)
+            return stripped.cast(pl.Float64).cast(pl.Int64)
         if isinstance(codes, np.ndarray):
             return np.array([int(str(v).split('.')[0]) for v in codes], dtype=np.int64)
         return [int(str(v).split('.')[0]) for v in codes]
@@ -83,10 +83,10 @@ class CodeConverter:
             return pl.DataFrame({col: arr.to_list()}, strict=False)
         if isinstance(codes, pd.Series):
             stripped = cls._prepare_stripped(codes)
-            return stripped.str.zfill(6)
+            return stripped.str.zfill(6).str.slice(0,6)
         if isinstance(codes, pl.Series):
             stripped = cls._prepare_stripped(codes)
-            return stripped.str.zfill(6)
+            return stripped.str.zfill(6).str.slice(0,6)
         ints = cls.to_int(codes)
         return [str(int(v)).zfill(6) for v in ints]
 
@@ -194,3 +194,15 @@ class CodeConverter:
             engine,
         )
         return {str(code).zfill(6): name for code, name in zip(df['SEC_CODE'], df['SEC_SHORT_NAME_CN'])}
+
+# Pandas Series
+ser = pd.Series(["000001", 600519.0,'300519.SZ']*1000000)
+CodeConverter.to_suffix(ser)
+print(CodeConverter.get_short_names(ser, with_code=True, code_format='suffix'))
+# DataFrame: columns ['code_code','code_short']
+CodeConverter.to_str(ser)
+# Polars DataFrame
+df = pl.DataFrame({"code": ["000001", "600519"]})
+print(CodeConverter.get_short_names(df, with_code=True, code_format='str'))
+# Polars DataFrame: columns ['code_code','code_short']
+
