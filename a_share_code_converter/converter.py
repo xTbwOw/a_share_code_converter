@@ -124,7 +124,7 @@ class CodeConverter:
         raise ValueError(f"Unsupported target format: {to}")
 
     @classmethod
-    def get_short_names(
+    def to_name(
         cls,
         codes: Any,
         with_suffix: bool = False,
@@ -137,12 +137,12 @@ class CodeConverter:
         if isinstance(codes, pd.DataFrame):
             col = codes.columns[0]
             series = codes[col]
-            df = cls.get_short_names(series, with_suffix, with_code, code_format)
+            df = cls.to_name(series, with_suffix, with_code, code_format)
             df.index = codes.index
             return df
         # polars DataFrame: delegate to Series
         if isinstance(codes, pl.DataFrame):
-            return cls.get_short_names(codes[codes.columns[0]], with_suffix, with_code, code_format)
+            return cls.to_name(codes[codes.columns[0]], with_suffix, with_code, code_format)
         # Series or list/array
         if code_format == 'int':
             rep = cls.to_int(codes)
@@ -194,15 +194,4 @@ class CodeConverter:
             engine,
         )
         return {str(code).zfill(6): name for code, name in zip(df['SEC_CODE'], df['SEC_SHORT_NAME_CN'])}
-
-# Pandas Series
-ser = pd.Series(["000001", 600519.0,'300519.SZ']*1000000)
-CodeConverter.to_suffix(ser)
-print(CodeConverter.get_short_names(ser, with_code=True, code_format='suffix'))
-# DataFrame: columns ['code_code','code_short']
-CodeConverter.to_str(ser)
-# Polars DataFrame
-df = pl.DataFrame({"code": ["000001", "600519"]})
-print(CodeConverter.get_short_names(df, with_code=True, code_format='str'))
-# Polars DataFrame: columns ['code_code','code_short']
 
